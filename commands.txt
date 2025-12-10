@@ -1,0 +1,20 @@
+python3 contrastive_autoencoder.py --train-data-root 7988559/train --epochs 20 --batch-size 8 --image-size 224 --plot-path embedding_plot_train.png --save-path cae_checkpoint.pt
+
+
+python3 contrastive_autoencoder.py \
+  --train-data-root 7988559/train \
+  --epochs 30 \
+  --batch-size 16 \
+  --image-size 224 \
+  --latent-dim 128 \
+  --contrastive-weight 0.3 \
+  --plot-path embedding_plot_train.png \
+  --save-path cae_checkpoint.pt
+
+  
+python3 contrastive_autoencoder.py --train-data-root "INDIVIDUAL SUBJECTS Data" --epochs 5 --batch-size 8 --image-size 160 --plot-path embedding_plot_train.png --save-path cae_checkpoint.pt
+
+
+python3 classify_cow.py --checkpoint cae_checkpoint.pt --image 7988559/test/sapi_a/sapi_a_6.jpg --top-k 3
+python3 classify_cow.py --checkpoint cae_checkpoint.pt --image 7988559/test/sapi_a/sapi_a_6.jpg --top-k 3
+python classify_cow_batch.py --checkpoint cae_checkpoint.pt --input-dir 7988559/test --output batch_results.txt --top-k 3
