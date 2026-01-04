@@ -1,18 +1,38 @@
-python3 contrastive_autoencoder.py --train-data-root 7988559/train --epochs 20 --batch-size 8 --image-size 224 --plot-path embedding_plot_train.png --save-path cae_checkpoint.pt
-
-
+# High-focus contrastive autoencoding with more epochs
 python3 contrastive_autoencoder.py \
   --train-data-root 7988559/train \
-  --epochs 30 \
+  --epochs 100 \
   --batch-size 16 \
   --image-size 224 \
   --latent-dim 128 \
-  --contrastive-weight 0.3 \
+  --contrastive-weight 0.8 \
+  --lr 5e-4 \
   --plot-path embedding_plot_train.png \
   --save-path cae_checkpoint.pt
 
-  
-python3 contrastive_autoencoder.py --train-data-root "INDIVIDUAL SUBJECTS Data" --epochs 5 --batch-size 8 --image-size 160 --plot-path embedding_plot_train.png --save-path cae_checkpoint.pt
+# Extended training with even higher contrastive focus
+python3 contrastive_autoencoder.py \
+  --train-data-root 7988559/train \
+  --epochs 150 \
+  --batch-size 16 \
+  --image-size 224 \
+  --latent-dim 128 \
+  --contrastive-weight 1.0 \
+  --lr 3e-4 \
+  --plot-path embedding_plot_train.png \
+  --save-path cae_checkpoint.pt
+
+# Training on individual subjects data with contrastive focus
+python3 contrastive_autoencoder.py \
+  --train-data-root "INDIVIDUAL SUBJECTS Data" \
+  --epochs 80 \
+  --batch-size 16 \
+  --image-size 224 \
+  --latent-dim 128 \
+  --contrastive-weight 0.7 \
+  --lr 5e-4 \
+  --plot-path embedding_plot_train.png \
+  --save-path cae_checkpoint.pt
 
 
 python3 classify_cow.py --checkpoint cae_checkpoint.pt --image 7988559/test/sapi_a/sapi_a_6.jpg --top-k 3
