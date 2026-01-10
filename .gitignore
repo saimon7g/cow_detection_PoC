@@ -61,6 +61,55 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Django migrations (keep structure, ignore specific migration files if needed)
+# Uncomment the next line if you want to ignore all migrations
+# */migrations/*.py
+# */migrations/*.pyc
+# !*/migrations/__init__.py
+
+# Django static files (collected static files)
+/static/
+/staticfiles/
+/static_root/
+
+# Django media files (user uploads)
+/media/
+/media_root/
+cow_detection_backend/media/
+
+# Django cache
+*.pyc
+__pycache__/
+.python-version
+
+# Django secret key
+.env
+.env.local
+.env.*.local
+secrets.json
+
+# Django collectstatic
+staticfiles/
+
+# Django test coverage
+.coverage
+htmlcov/
+
+# Django migrations backup
+*.pyc
+*.pyo
+*.pyd
+
+# Django development
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Django logs
+*.log
+logs/
+
 # Flask stuff:
 instance/
 .webassets-cache

@@ -1,3 +1,40 @@
+# ============================================
+# INCREMENTAL TRAINING (One cow at a time)
+# ============================================
+# Train on one cow at a time, model learns incrementally
+# First cow - creates new model
+python3 incremental_train.py \
+  --cow-images 7988559/train/sapi_a \
+  --cow-name sapi_a \
+  --epochs 50 \
+  --batch-size 8 \
+  --contrastive-weight 0.8 \
+  --lr 5e-4
+
+# Second cow - loads previous checkpoint and updates
+python3 incremental_train.py \
+  --cow-images 7988559/train/sapi_b \
+  --cow-name sapi_b \
+  --epochs 50 \
+  --batch-size 8 \
+  --contrastive-weight 0.8 \
+  --lr 5e-4
+
+# Third cow - continues learning
+python3 incremental_train.py \
+  --cow-images 7988559/train/sapi_c \
+  --cow-name sapi_c \
+  --epochs 50 \
+  --batch-size 8 \
+  --contrastive-weight 0.8 \
+  --lr 5e-4
+
+# Continue for more cows...
+# The checkpoint and metrics are automatically saved after each cow
+
+# ============================================
+# BATCH TRAINING (All cows at once)
+# ============================================
 # High-focus contrastive autoencoding with more epochs
 python3 contrastive_autoencoder.py \
   --train-data-root 7988559/train \
