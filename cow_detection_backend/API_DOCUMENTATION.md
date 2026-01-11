@@ -7,6 +7,8 @@ Single API endpoint to register a cow with complete information including policy
 ## Endpoints
 
 - **POST** `/api/register/` - Register a cow with all information
+- **GET** `/api/profiles/` - Get all cow profiles (minimal fields)
+- **POST** `/api/classify/` - Classify a cow image and find matching profiles
 - **GET** `/api/training-status/{training_id}/` - Check training status
 - **GET** `/api/user/` - Get current user information (requires authentication)
 
@@ -376,3 +378,282 @@ These can be customized per request.
 - Training status is stored in database and persists across requests
 - Multiple cows can be registered simultaneously (each has its own training thread)
 - If a cow with the same `policy_id` and `cow_name` already exists, the existing record will be updated
+
+---
+
+## Classify Cow Endpoint
+
+**POST** `/api/classify/`
+
+Classify a cow image and find matching profiles from the database using the trained model.
+
+### Request Format
+
+**Content-Type:** `multipart/form-data`
+
+### Required Fields
+
+- `image` (file): Cow image to classify (muzzle photo recommended for best results)
+
+### Optional Fields
+
+- `top_k` (integer): Number of top matches to return (default: `5`, min: 1, max: 20)
+- `threshold` (float): Maximum distance threshold for matches (optional, filters results by distance)
+
+### Example Request
+
+#### Using cURL
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/classify/ \
+  -F "image=@/path/to/cow_image.jpg" \
+  -F "top_k=5" \
+  -F "threshold=1.5"
+```
+
+#### Using Python requests
+
+```python
+import requests
+
+url = "http://127.0.0.1:8000/api/classify/"
+
+files = {
+    'image': ('cow_image.jpg', open('path/to/cow_image.jpg', 'rb'), 'image/jpeg')
+}
+
+data = {
+    'top_k': 5,
+    'threshold': 1.5  # Optional
+}
+
+response = requests.post(url, files=files, data=data)
+print(response.json())
+```
+
+#### Using JavaScript/Fetch
+
+```javascript
+const formData = new FormData();
+formData.append('image', document.getElementById('cowImage').files[0]);
+formData.append('top_k', '5');
+formData.append('threshold', '1.5');  // Optional
+
+fetch('http://127.0.0.1:8000/api/classify/', {
+    method: 'POST',
+    body: formData
+})
+.then(response => response.json())
+.then(data => {
+    console.log('Best match:', data.verdict.best_match);
+    console.log('All matches:', data.all_matches);
+})
+.catch(error => console.error('Error:', error));
+```
+
+### Response Format
+
+#### Success Response (200 OK)
+
+```json
+{
+    "message": "Classification completed successfully",
+    "verdict": {
+        "matched": true,
+        "best_match": {
+            "cow_name": "Bella",
+            "distance": 0.3245,
+            "rank": 1,
+            "class_idx": 0,
+            "cow_profile": {
+                "id": 11,
+                "policy_id": "POL-20260110-150802-C6A517F8",
+                "cow_name": "Bella",
+                "cow_age": 24,
+                "cow_breed": "Holstein",
+                "owner_name": "John Doe",
+                "cow_id": "COW-20260110-150802-BC8C464D",
+                "created_at": "2026-01-10T15:08:02.501709Z",
+                "updated_at": "2026-01-10T15:08:02.501718Z",
+                "notes": ""
+            }
+        },
+        "confidence": "high"
+    },
+    "all_matches": [
+        {
+            "cow_name": "Bella",
+            "distance": 0.3245,
+            "rank": 1,
+            "class_idx": 0,
+            "cow_profile": { ... }
+        },
+        {
+            "cow_name": "Charlie",
+            "distance": 0.8765,
+            "rank": 2,
+            "class_idx": 1,
+            "cow_profile": { ... }
+        }
+    ],
+    "total_matches": 5
+}
+```
+
+#### No Match Found
+
+```json
+{
+    "message": "Classification completed successfully",
+    "verdict": {
+        "matched": false,
+        "best_match": null,
+        "confidence": null
+    },
+    "all_matches": [],
+    "total_matches": 0
+}
+```
+
+#### Error Response (400 Bad Request)
+
+```json
+{
+    "image": ["This field is required."]
+}
+```
+
+#### Error Response (503 Service Unavailable)
+
+```json
+{
+    "error": "Model checkpoint not found. Please train the model first."
+}
+```
+
+### Response Fields
+
+- **`verdict`**: Classification result
+  - `matched`: Boolean indicating if any match was found
+  - `best_match`: Object with the closest matching cow (null if no match)
+  - `confidence`: String indicating confidence level (`"high"`, `"medium"`, `"low"`, or `null`)
+    - `high`: distance < 0.5
+    - `medium`: distance < 1.0
+    - `low`: distance >= 1.0
+
+- **`all_matches`**: Array of all matches (up to `top_k`)
+  - `cow_name`: Name of the matched cow
+  - `distance`: L2 distance to the cow's centroid (lower is better)
+  - `rank`: Ranking (1 = closest)
+  - `class_idx`: Internal class index
+  - `cow_profile`: Full cow profile information (if found in database)
+
+- **`total_matches`**: Total number of matches returned
+
+### Important Notes
+
+- **Muzzle photos work best**: The model was trained on muzzle photos, so muzzle images will give the most accurate results
+- **Distance metric**: Lower distance values indicate better matches
+- **Confidence levels**: 
+  - `high` (distance < 0.5): Very likely a match
+  - `medium` (distance < 1.0): Possible match
+  - `low` (distance >= 1.0): Unlikely match
+- **Threshold filtering**: If `threshold` is provided, only matches with distance <= threshold are returned
+- **Model requirement**: The model checkpoint (`cae_checkpoint.pt`) must exist and be trained before classification will work
+
+---
+
+## List All Profiles Endpoint
+
+**GET** `/api/profiles/`
+
+Get all registered cow profiles with minimal information (cow_name, cow_breed, owner_name, policy_id).
+
+### Request Format
+
+No request body required. Simple GET request.
+
+### Example Request
+
+#### Using cURL
+
+```bash
+curl -X GET http://127.0.0.1:8000/api/profiles/
+```
+
+#### Using Python requests
+
+```python
+import requests
+
+url = "http://127.0.0.1:8000/api/profiles/"
+response = requests.get(url)
+print(response.json())
+```
+
+#### Using JavaScript/Fetch
+
+```javascript
+fetch('http://127.0.0.1:8000/api/profiles/')
+    .then(response => response.json())
+    .then(data => {
+        console.log('Total profiles:', data.count);
+        console.log('Profiles:', data.profiles);
+    })
+    .catch(error => console.error('Error:', error));
+```
+
+### Response Format
+
+#### Success Response (200 OK)
+
+```json
+{
+    "count": 3,
+    "profiles": [
+        {
+            "cow_name": "Bella",
+            "cow_breed": "Holstein",
+            "owner_name": "John Doe",
+            "policy_id": "POL-20260110-150802-C6A517F8"
+        },
+        {
+            "cow_name": "Charlie",
+            "cow_breed": "Jersey",
+            "owner_name": "Jane Smith",
+            "policy_id": "POL-20260110-151230-D7E8F9A0"
+        },
+        {
+            "cow_name": "Daisy",
+            "cow_breed": "Angus",
+            "owner_name": "Bob Johnson",
+            "policy_id": "POL-20260110-152045-E1F2G3H4"
+        }
+    ]
+}
+```
+
+#### Empty Response (200 OK)
+
+```json
+{
+    "count": 0,
+    "profiles": []
+}
+```
+
+### Response Fields
+
+- **`count`**: Total number of profiles returned
+- **`profiles`**: Array of profile objects, each containing:
+  - `cow_name`: Name of the cow
+  - `cow_breed`: Breed of the cow (may be empty string)
+  - `owner_name`: Name of the owner (may be empty string)
+  - `policy_id`: Unique policy/registration ID
+
+### Important Notes
+
+- **Minimal fields only**: This endpoint returns only the specified fields (cow_name, cow_breed, owner_name, policy_id)
+- **No authentication required**: Publicly accessible endpoint
+- **Ordered by creation date**: Profiles are returned in descending order (newest first)
+- **Empty fields**: If cow_breed or owner_name were not provided during registration, they will be empty strings

@@ -10,9 +10,14 @@ import shutil
 import threading
 import traceback
 import logging
-from .serializers import CowRegistrationSerializer, UserSerializer, CowProfileSerializer, TrainingStatusSerializer
+from .serializers import (
+    CowRegistrationSerializer, UserSerializer, CowProfileSerializer, 
+    TrainingStatusSerializer, CowClassificationSerializer, CowMatchSerializer,
+    CowProfileListSerializer
+)
 from .models import CowProfile, TrainingStatus
 from .training_service import train_cow_incremental
+from .classification_service import classify_cow_image
 
 logger = logging.getLogger(__name__)
 
@@ -240,4 +245,99 @@ def training_status(request, training_id):
         return Response(serializer.data)
     except TrainingStatus.DoesNotExist:
         return Response({'error': 'Training status not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def classify_cow(request):
+    """
+    Classify a cow image and return matching profiles.
+    
+    Expected payload (multipart/form-data):
+    - image: image file (required) - Cow image to classify
+    - top_k: integer (optional, default: 5) - Number of top matches to return
+    - threshold: float (optional) - Maximum distance threshold for matches
+    """
+    serializer = CowClassificationSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        image_file = serializer.validated_data['image']
+        top_k = serializer.validated_data.get('top_k', 5)
+        threshold = serializer.validated_data.get('threshold', None)
+        
+        try:
+            # Classify the image
+            matches = classify_cow_image(
+                image_file=image_file,
+                top_k=top_k,
+                threshold=threshold
+            )
+            
+            # Enrich matches with cow profile information
+            enriched_matches = []
+            for match in matches:
+                cow_name = match['cow_name']
+                try:
+                    # Get the most recent cow profile with this name
+                    cow_profile = CowProfile.objects.filter(cow_name=cow_name).order_by('-created_at').first()
+                    match['cow_profile'] = CowProfileSerializer(cow_profile).data if cow_profile else None
+                except Exception as e:
+                    logger.warning(f"Could not fetch profile for {cow_name}: {e}")
+                    match['cow_profile'] = None
+                
+                enriched_matches.append(match)
+            
+            # Determine best match
+            best_match = enriched_matches[0] if enriched_matches else None
+            verdict = {
+                'matched': best_match is not None,
+                'best_match': best_match,
+                'confidence': 'high' if best_match and best_match['distance'] < 0.5 else 
+                             'medium' if best_match and best_match['distance'] < 1.0 else 
+                             'low' if best_match else None
+            }
+            
+            response_data = {
+                'message': 'Classification completed successfully',
+                'verdict': verdict,
+                'all_matches': enriched_matches,
+                'total_matches': len(enriched_matches)
+            }
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except FileNotFoundError as e:
+            return Response(
+                {'error': 'Model checkpoint not found. Please train the model first.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+        except Exception as e:
+            logger.error(f"Classification error: {traceback.format_exc()}")
+            return Response(
+                {'error': f'Classification failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def list_profiles(request):
+    """
+    Get all cow profiles with minimal information.
+    
+    Returns a list of all registered cow profiles with only:
+    - cow_name
+    - cow_breed
+    - owner_name
+    - policy_id
+    """
+    profiles = CowProfile.objects.all().order_by('-created_at')
+    serializer = CowProfileListSerializer(profiles, many=True)
+    
+    return Response({
+        'count': len(serializer.data),
+        'profiles': serializer.data
+    }, status=status.HTTP_200_OK)
 

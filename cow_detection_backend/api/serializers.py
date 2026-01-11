@@ -231,3 +231,26 @@ class TrainingStatusSerializer(serializers.ModelSerializer):
             'error_message', 'num_images', 'epochs', 'checkpoint_path'
         )
 
+
+class CowClassificationSerializer(serializers.Serializer):
+    """Serializer for cow image classification."""
+    image = serializers.ImageField(required=True, help_text="Cow image to classify")
+    top_k = serializers.IntegerField(required=False, default=5, min_value=1, max_value=20, help_text="Number of top matches to return")
+    threshold = serializers.FloatField(required=False, allow_null=True, min_value=0.0, help_text="Maximum distance threshold for matches")
+
+
+class CowMatchSerializer(serializers.Serializer):
+    """Serializer for cow match results."""
+    cow_name = serializers.CharField()
+    distance = serializers.FloatField()
+    rank = serializers.IntegerField()
+    cow_profile = CowProfileSerializer(read_only=True, allow_null=True)
+
+
+class CowProfileListSerializer(serializers.ModelSerializer):
+    """Serializer for listing cow profiles with minimal fields."""
+    
+    class Meta:
+        model = CowProfile
+        fields = ('cow_name', 'cow_breed', 'owner_name', 'policy_id')
+
