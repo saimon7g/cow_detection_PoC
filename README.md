@@ -1,116 +1,112 @@
-# Cow Detection PoC
+# Cow Insurance Management System
 
-A proof-of-concept system for cow detection and identification using contrastive autoencoder with incremental learning.
+A system for registering cattle, managing farmer profiles, and processing livestock insurance claims — backed by AI-powered cow identification using muzzle photos.
 
-## Features
+---
 
-- **Incremental ML Training**: Train the model on one cow at a time, learning incrementally
-- **REST API**: Django backend with single API call for cow registration
-- **Asynchronous Training**: Training runs in background, API returns immediately
-- **Muzzle Photo Recognition**: Model trains using only muzzle photos for identification
-- **Embedding Visualization**: Automatic generation of t-SNE plots showing cow clusters
-- **Complete Data Management**: Store policy info, cow details, owner info, and photos
+## User Roles
 
-## Quick Start
+The system has three types of users. Each has a distinct set of responsibilities.
 
-### 1. Setup Environment
+| Role | Description |
+|------|-------------|
+| **Admin** | Oversees the entire system. Assigns agents, makes final decisions on claims, and monitors all activity. |
+| **Company Agent** | Field staff who register cows, create farmer accounts, and verify claims on the ground. |
+| **Farmer** | Livestock owners who view their registered cows and submit insurance claims. |
 
-```bash
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On macOS/Linux
-# venv\Scripts\activate  # On Windows
+---
 
-# Install dependencies
-pip install -r requirements.txt
-```
+## Admin
 
-### 2. Run Django Backend
+The admin has full visibility across the system and makes the final call on every insurance claim.
 
-```bash
-cd cow_detection_backend
-python manage.py makemigrations
-python manage.py migrate
-python manage.py runserver
-```
+### What an admin can do
 
-API will be available at `http://127.0.0.1:8000/api/`
+**Monitor the system**
+- View a dashboard showing total registered cows, total farmers, total agents, and a breakdown of claim statuses (pending / approved / rejected).
 
-### 3. Register a Cow
+**Manage people**
+- View all company agent profiles, including how many claims each agent has verified.
+- View all farmer profiles, including how many cows are registered under each farmer.
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/register/ \
-  -F "policy_id=POL-2024-001" \
-  -F "cow_name=Bella" \
-  -F "muzzle_photos=@/path/to/muzzle_photo.jpg" \
-  -F "train_model=true"
-```
+**Handle insurance claims**
+- View all claims with complete detail: who submitted the claim, which agent was assigned to verify it, what the agent's verification result was, and the final decision.
+- Filter claims by status, by assigned agent, or by verifying agent.
+- **Assign** a company agent to verify a specific claim.
+- **Approve or reject** a claim after reviewing the agent's verification result (final decision).
 
-## Documentation
+> The admin is the only person who can give final approval or rejection on an insurance claim.
 
-- **[SETUP.md](SETUP.md)** - Complete setup and installation guide
-- **[cow_detection_backend/API_DOCUMENTATION.md](cow_detection_backend/API_DOCUMENTATION.md)** - Complete API documentation with examples
+---
 
-## How It Works
+## Company Agent
 
-### Incremental Training
+Company agents are the primary field operators. They create farmer accounts, register cows, and carry out on-site claim verifications.
 
-The model learns incrementally - you can train on one cow at a time:
+### What a company agent can do
 
-```bash
-# Train first cow
-python3 incremental_train.py \
-  --cow-images path/to/cow_a_images/ \
-  --cow-name sapi_a \
-  --epochs 50
+**Manage farmers**
+- Create a new farmer account (username, password, contact details).
+- View the list of all farmers with their cow counts.
 
-# Train additional cows (loads previous checkpoint)
-python3 incremental_train.py \
-  --cow-images path/to/cow_b_images/ \
-  --cow-name sapi_b \
-  --epochs 50
-```
+**Register cows**
+- Register a new cow under a specific farmer's profile.
+- Upload cow photos and muzzle photos during registration (muzzle photos are used by the AI model to identify the cow).
+- A unique policy ID and cow ID are automatically generated for every registration.
 
-### API Registration
+**Create insurance claims**
+- Open a claim on behalf of any cow in the system (e.g. if a farmer reports a cow as dead or sick).
 
-Register cows via API with automatic training:
+**Verify claims (when assigned by admin)**
+- An agent can only verify a claim if the admin has specifically assigned that claim to them.
+- The agent visits the farm, confirms the situation, and records a **yes/no** verification result along with notes.
+- The agent **does not approve or reject** the claim — that decision belongs to the admin.
 
-1. Send cow information + photos via API
-2. API validates and saves data immediately
-3. Training starts in background
-4. Check training status via status endpoint
+**Identify cows**
+- Use the AI classification tool to identify a cow from a photo by matching it against registered muzzle prints.
 
-## Key Components
+---
 
-- **ML Model**: Contrastive autoencoder for cow identification
-- **Django API**: REST API for cow registration
-- **Incremental Learning**: Add new cows without retraining from scratch
-- **Background Training**: Non-blocking ML training
-- **Status Tracking**: Monitor training progress
+## Farmer
 
-## Output Files
+Farmers are the registered livestock owners. They can see their own cows and submit insurance claims when needed.
 
-- `cae_checkpoint.pt`: Model checkpoint (updated after each cow)
-- `training_metrics.json`: Training metrics for all cows
-- `plots/all_embeddings.png`: All embedding points visualization
-- `plots/class_means.png`: Class means visualization
-- `cow_detection_backend/media/`: Uploaded cow and muzzle photos
+### What a farmer can do
 
-## Project Structure
+**View my cows**
+- See the full list of cows registered under their profile, including each cow's name, breed, age, policy ID, and registration date.
+- Farmers only see their own cows — they cannot see cows belonging to other farmers.
+
+**Submit an insurance claim**
+- Open a claim for one of their own cows if it is dead, sick, or otherwise in need of insurance coverage.
+- Provide the reason (dead, sick, or other) and any additional notes.
+- Track the status of their submitted claims (pending → verified by agent → approved/rejected by admin).
+
+> A farmer cannot register a cow themselves — that must be done by a company agent.
+
+---
+
+## How a Claim Works (End to End)
 
 ```
-cow_detection_PoC/
-├── cow_detection_backend/   # Django API backend
-│   ├── api/                 # API endpoints
-│   ├── media/               # Uploaded images
-│   └── API_DOCUMENTATION.md # API docs
-├── incremental_train.py     # Standalone training script
-├── contrastive_autoencoder.py  # ML model
-├── requirements.txt         # Dependencies
-├── README.md               # This file
-└── SETUP.md                # Setup guide
+1. Farmer or Agent   →  Submits a claim for a cow
+2. Admin             →  Reviews the claim and assigns an agent to verify it
+3. Agent             →  Visits the farm and records verification (yes/no)
+4. Admin             →  Reviews the verification and gives final approval or rejection
 ```
 
-## License
+---
 
-See LICENSE file for details.
+## Getting Started
+
+- **For setup and installation**, see [SETUP.md](SETUP.md).
+- **For API endpoint reference**, see [API_DOCUMENTATION.md](cow_detection_backend/API_DOCUMENTATION.md).
+
+---
+
+## Technology
+
+- **Backend**: Django + Django REST Framework
+- **Authentication**: JWT (JSON Web Token)
+- **Cow Identification**: Contrastive autoencoder trained on muzzle photos
+- **Database**: SQLite (development)
