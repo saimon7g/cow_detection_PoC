@@ -126,7 +126,16 @@ After that, company agents create farmer accounts through the API. See the [User
 python manage.py runserver
 ```
 
-The API is available at `http://127.0.0.1:8000/api/`
+The API is available at `https://127.0.0.1:8000/api/` (or your server URL if you use a reverse proxy).
+
+**Using HTTPS:** The app is configured to use HTTPS in docs and cookies. To enforce HTTPS in Django (redirect HTTP→HTTPS, secure cookies), run behind a reverse proxy (e.g. nginx, Caddy) that terminates SSL and set:
+
+```bash
+export USE_HTTPS=true
+python manage.py runserver
+```
+
+Or run your reverse proxy on 443 and point it at Django on 127.0.0.1:8000; Django will trust the `X-Forwarded-Proto: https` header.
 
 ---
 
@@ -185,12 +194,12 @@ Once the server is running:
 
 | URL | Purpose |
 |-----|---------|
-| `http://127.0.0.1:8000/api/` | REST API base |
-| `http://127.0.0.1:8000/api/token/` | Login (get JWT) |
-| `http://127.0.0.1:8000/api/docs/` | Swagger UI (interactive API docs, try requests, copy cURL) |
-| `http://127.0.0.1:8000/api/redoc/` | ReDoc (API reference) |
-| `http://127.0.0.1:8000/api/schema/` | OpenAPI 3 schema (for Postman import) |
-| `http://127.0.0.1:8000/admin/` | Django admin panel (superuser only) |
+| `https://127.0.0.1:8000/api/` | REST API base |
+| `https://127.0.0.1:8000/api/token/` | Login (get JWT) |
+| `https://127.0.0.1:8000/api/docs/` | Swagger UI (interactive API docs, try requests, copy cURL) |
+| `https://127.0.0.1:8000/api/redoc/` | ReDoc (API reference) |
+| `https://127.0.0.1:8000/api/schema/` | OpenAPI 3 schema (for Postman import) |
+| `https://127.0.0.1:8000/admin/` | Django admin panel (superuser only) |
 
 ---
 

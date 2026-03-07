@@ -6,9 +6,9 @@ When the server is running, you can use:
 
 | URL | Description |
 |-----|-------------|
-| **http://127.0.0.1:8000/api/docs/** | **Swagger UI** — browse endpoints, try requests, copy as cURL, use in Postman |
-| **http://127.0.0.1:8000/api/redoc/** | **ReDoc** — read-only API reference |
-| **http://127.0.0.1:8000/api/schema/** | **OpenAPI 3 schema** (YAML) — import into Postman or other tools |
+| **https://127.0.0.1:8000/api/docs/** | **Swagger UI** — browse endpoints, try requests, copy as cURL, use in Postman |
+| **https://127.0.0.1:8000/api/redoc/** | **ReDoc** — read-only API reference |
+| **https://127.0.0.1:8000/api/schema/** | **OpenAPI 3 schema** (YAML) — import into Postman or other tools |
 
 In Swagger UI, click **Authorize**, then enter your JWT as `Bearer <access_token>` (or just the token) so authenticated requests work.
 
@@ -202,7 +202,7 @@ Register a cow under a specific farmer. The farmer must already have an account.
 
 **cURL example:**
 ```bash
-curl -X POST http://127.0.0.1:8000/api/register/ \
+curl -X POST https://127.0.0.1:8000/api/register/ \
   -H "Authorization: Bearer <agent_token>" \
   -F "owner_id=5" \
   -F "cow_name=Bella" \

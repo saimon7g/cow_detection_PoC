@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import Optional
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.models import User
@@ -50,7 +53,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'date_joined', 'user_type')
 
-    def get_user_type(self, obj):
+    def get_user_type(self, obj: User) -> Optional[str]:
         try:
             return obj.profile.user_type
         except Exception:
@@ -105,7 +108,7 @@ class CowProfileSerializer(serializers.ModelSerializer):
             'farmer_username',
         )
 
-    def get_farmer_username(self, obj):
+    def get_farmer_username(self, obj: CowProfile) -> str:
         return obj.user.username
 
 
@@ -116,7 +119,7 @@ class CowProfileListSerializer(serializers.ModelSerializer):
         model = CowProfile
         fields = ('id', 'cow_name', 'cow_breed', 'owner_name', 'policy_id', 'cow_id', 'farmer_username')
 
-    def get_farmer_username(self, obj):
+    def get_farmer_username(self, obj: CowProfile) -> str:
         return obj.user.username
 
 
@@ -329,10 +332,10 @@ class AdminFarmerSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'date_joined', 'user_type', 'cow_count')
 
-    def get_cow_count(self, obj):
+    def get_cow_count(self, obj: User) -> int:
         return obj.cow_profiles.count()
 
-    def get_user_type(self, obj):
+    def get_user_type(self, obj: User) -> Optional[str]:
         try:
             return obj.profile.user_type
         except Exception:
@@ -348,11 +351,11 @@ class AdminAgentSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'date_joined', 'user_type', 'verified_claims_count')
 
-    def get_user_type(self, obj):
+    def get_user_type(self, obj: User) -> Optional[str]:
         try:
             return obj.profile.user_type
         except Exception:
             return None
 
-    def get_verified_claims_count(self, obj):
+    def get_verified_claims_count(self, obj: User) -> int:
         return obj.verified_claims.count()

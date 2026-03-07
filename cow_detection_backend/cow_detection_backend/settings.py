@@ -173,3 +173,11 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+# HTTPS: set USE_HTTPS=true when serving over HTTPS (e.g. behind a reverse proxy that terminates SSL)
+USE_HTTPS = os.environ.get('USE_HTTPS', 'false').lower() in ('1', 'true', 'yes')
+if USE_HTTPS:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
