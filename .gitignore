@@ -233,3 +233,18 @@ cython_debug/
 7988559/ 
 INDIVIDUAL SUBJECTS Data/
 *.pt
+
+/plots/
+/training_metrics.json
+/cae_checkpoint.pt
+/cae_checkpoint.pt.index
+/cae_checkpoint.pt.meta
+/cae_checkpoint.pt.data-00000-of-00001
+/cae_checkpoint.pt.data-00001-of-00001
+/cae_checkpoint.pt.data-00002-of-00001
+/cae_checkpoint.pt.data-00003-of-00001
+/cae_checkpoint.pt.data-00004-of-00001
+/cae_checkpoint.pt.data-00005-of-00001
+/cae_checkpoint.pt.data-00006-of-00001
+/cae_checkpoint.pt.data-00007-of-00001
+/cae_checkpoint.pt.data-00008-of-00001
